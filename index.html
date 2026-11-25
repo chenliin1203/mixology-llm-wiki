@@ -1,0 +1,432 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>居家超商調酒與分層科學入門 | LLM Wiki 教學簡報</title>
+  <style>
+    :root {
+      --bg-dark: #121110;
+      --card-bg: #1e1c1a;
+      --accent-gold: #d4a373;
+      --accent-blue: #3a6ea5;
+      --text-main: #f4f1ea;
+      --text-muted: #a89f91;
+      --border-color: #332e2a;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: "Noto Sans TC", "Microsoft JhengHei", sans-serif;
+      background-color: var(--bg-dark);
+      color: var(--text-main);
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+
+    /* 頂部進度條 */
+    .progress-bar {
+      height: 5px;
+      background: var(--border-color);
+      width: 100%;
+    }
+    .progress-fill {
+      height: 100%;
+      background: linear-gradient(90deg, var(--accent-blue), var(--accent-gold));
+      width: 12.5%;
+      transition: width 0.35s ease;
+    }
+
+    /* 簡報主舞台 */
+    .deck-container {
+      flex: 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 2rem;
+    }
+
+    .slide {
+      display: none;
+      background: var(--card-bg);
+      border: 1px solid var(--border-color);
+      border-radius: 16px;
+      width: 100%;
+      max-width: 960px;
+      min-height: 540px;
+      padding: 3rem 3.5rem;
+      box-shadow: 0 20px 50px rgba(0,0,0,0.6);
+      flex-direction: column;
+      justify-content: space-between;
+      animation: fadeIn 0.35s ease;
+    }
+
+    .slide.active { display: flex; }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .tag {
+      display: inline-block;
+      background: rgba(212, 163, 115, 0.15);
+      color: var(--accent-gold);
+      border: 1px solid var(--accent-gold);
+      padding: 4px 12px;
+      border-radius: 20px;
+      font-size: 0.85rem;
+      font-weight: bold;
+      margin-bottom: 1rem;
+      width: fit-content;
+    }
+
+    h1 { font-size: 2.6rem; line-height: 1.3; margin-bottom: 1rem; color: var(--accent-gold); }
+    h2 { font-size: 1.9rem; margin-bottom: 1.5rem; color: var(--accent-gold); border-bottom: 1px solid var(--border-color); padding-bottom: 0.6rem; }
+    p { font-size: 1.15rem; line-height: 1.75; color: var(--text-main); margin-bottom: 1rem; }
+
+    .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; margin-top: 0.5rem; }
+    .grid-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1rem; margin-top: 0.5rem; }
+
+    .box {
+      background: rgba(255,255,255,0.03);
+      border: 1px solid var(--border-color);
+      border-radius: 10px;
+      padding: 1.2rem;
+    }
+    .box h3 { color: var(--accent-gold); margin-bottom: 0.5rem; font-size: 1.2rem; }
+    .box p, .box li { font-size: 1rem; color: var(--text-muted); line-height: 1.6; }
+
+    ul { padding-left: 1.3rem; }
+    li { margin-bottom: 0.6rem; font-size: 1.1rem; line-height: 1.6; }
+    strong { color: var(--accent-gold); }
+
+    table { width: 100%; border-collapse: collapse; margin-top: 0.5rem; }
+    th, td { border: 1px solid var(--border-color); padding: 12px 15px; text-align: left; }
+    th { background: rgba(212, 163, 115, 0.15); color: var(--accent-gold); }
+    td { color: var(--text-main); font-size: 1rem; }
+
+    .highlight-warn {
+      background: rgba(58, 110, 165, 0.18);
+      border-left: 4px solid var(--accent-blue);
+      padding: 1rem 1.2rem;
+      border-radius: 6px;
+      margin-top: 1rem;
+    }
+
+    /* 投影片頁尾來源標註 */
+    .slide-footer {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-top: 1px solid var(--border-color);
+      padding-top: 1rem;
+      margin-top: 1.5rem;
+      font-size: 0.85rem;
+      color: var(--text-muted);
+    }
+
+    /* 底部控制列 */
+    .controls {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      gap: 1.5rem;
+      padding: 1rem;
+      background: #181614;
+      border-top: 1px solid var(--border-color);
+    }
+    button {
+      background: var(--card-bg);
+      color: var(--text-main);
+      border: 1px solid var(--accent-gold);
+      padding: 8px 20px;
+      border-radius: 8px;
+      cursor: pointer;
+      font-size: 1rem;
+      transition: all 0.2s;
+    }
+    button:hover:not(:disabled) {
+      background: var(--accent-gold);
+      color: var(--bg-dark);
+      font-weight: bold;
+    }
+    button:disabled { opacity: 0.35; cursor: not-allowed; }
+    .page-indicator { font-size: 1rem; color: var(--accent-gold); font-weight: bold; }
+  </style>
+</head>
+<body>
+
+  <div class="progress-bar"><div class="progress-fill" id="progressFill"></div></div>
+
+  <div class="deck-container">
+    <!-- Slide 1: 封面 -->
+    <section class="slide active">
+      <div>
+        <span class="tag">LLM Wiki 知識庫教學簡報</span>
+        <h1>居家超商調酒與<br>液體分層科學入門</h1>
+        <p style="font-size: 1.3rem; color: var(--text-muted); margin-top: 1.5rem;">
+          給零基礎新手的調酒物理課：不用專業吧台器具，只要理解「糖度密度差」與「冰塊緩衝」，在宿舍就能做出酒吧級漸層特調。
+        </p>
+      </div>
+      <div class="box">
+        <p style="margin:0;">💡 <strong>操作提示</strong>：可使用鍵盤左右方向鍵（<code>←</code> / <code>→</code>）或下方按鈕切換投影片。</p>
+      </div>
+      <div class="slide-footer">
+        <span>知識庫架構：raw/ (5篇) → wiki/ (編譯知識圖譜) → HTML 簡報</span>
+        <span>來源：wiki/index.md</span>
+      </div>
+    </section>
+
+    <!-- Slide 2: 學習地圖 -->
+    <section class="slide">
+      <div>
+        <span class="tag">01 / 課程導覽</span>
+        <h2>零基礎新手的三個核心觀念</h2>
+        <div class="grid-3">
+          <div class="box">
+            <h3>1. 認識酒精骨架</h3>
+            <p>了解五大基酒（40% ABV）的風味差異，挑出最適合搭配超商飲料的基底。</p>
+          </div>
+          <div class="box">
+            <h3>2. 破解分層物理</h3>
+            <p>打破「酒精度越高越輕」的迷思，掌握<strong>含糖量（糖度）</strong>主導密度的關鍵法則。</p>
+          </div>
+          <div class="box">
+            <h3>3. 掌握比例與手法</h3>
+            <p>學會全滿杯冰塊控制融水率、湯匙背面引流法，以及 1:3 萬用調酒公式。</p>
+          </div>
+        </div>
+      </div>
+      <div class="slide-footer">
+        <span>居家超商調酒入門</span>
+        <span>來源：wiki/index.md</span>
+      </div>
+    </section>
+
+    <!-- Slide 3: 五大基酒 -->
+    <section class="slide">
+      <div>
+        <span class="tag">02 / 酒精骨架</span>
+        <h2>認識調酒世界的五大基酒 (40% ABV)</h2>
+        <ul>
+          <li><strong>伏特加 (Vodka)</strong>：多次蒸餾過濾，無色無味最百搭，適合做茶酒與漸層頂層。</li>
+          <li><strong>琴酒 (Gin)</strong>：加入杜松子與柑橘皮蒸餾，散發清新森林草本與松針香氣。</li>
+          <li><strong>白蘭姆酒 (White Rum)</strong>：甘蔗汁蒸餾未陳年，帶淡淡甘蔗清甜，適合搭配薄荷與萊姆。</li>
+          <li><strong>龍舌蘭 (Tequila)</strong>：藍色龍舌蘭草心蒸餾，具獨特植物泥土氣息與微辛辣感。</li>
+          <li><strong>威士忌 (Whiskey)</strong>：穀物蒸餾經橡木桶陳年，呈琥珀色，具焦糖香草與木質厚實感。</li>
+        </ul>
+      </div>
+      <div class="slide-footer">
+        <span>基酒決定整杯調酒的香氣主軸</span>
+        <span>來源：wiki/five-base-spirits.md</span>
+      </div>
+    </section>
+
+    <!-- Slide 4: 副材料角色 -->
+    <section class="slide">
+      <div>
+        <span class="tag">03 / 風味拼圖</span>
+        <h2>超商副材料的三大功能角色</h2>
+        <div class="grid-3">
+          <div class="box">
+            <h3>賦予甜度與色彩</h3>
+            <p><strong>利口酒與花水</strong>：藍柑橘利口酒（甜橙香、寶石藍）、梅酒（酸甜果香）、蝶豆花水（遇酸由藍變紫）。</p>
+          </div>
+          <div class="box">
+            <h3>中和酒感與回甘</h3>
+            <p><strong>無糖茶飲</strong>：無糖茉莉綠茶、烏龍茶。茶多酚能柔化烈酒嗆辣感，且含糖量為 0。</p>
+          </div>
+          <div class="box">
+            <h3>氣泡口感與清爽度</h3>
+            <p><strong>碳酸飲料</strong>：雪碧（高糖檸檬甜）、通寧水（微苦草本）、無糖氣泡水（純粹氣泡感）。</p>
+          </div>
+        </div>
+        <div class="highlight-warn">
+          <strong>酸、甜、酒感平衡三角</strong>：一杯順口的調酒 = 烈酒（骨架）＋ 檸檬/萊姆汁（酸度解膩）＋ 利口酒/含糖汽水（甜度圓潤）。
+        </div>
+      </div>
+      <div class="slide-footer">
+        <span>善用超商隨手可得的飲料即可調配</span>
+        <span>來源：wiki/flavor-formula.md</span>
+      </div>
+    </section>
+
+    <!-- Slide 5: 分層科學 -->
+    <section class="slide">
+      <div>
+        <span class="tag">04 / 核心物理原理</span>
+        <h2>液體分層科學：含糖量才是主角！</h2>
+        <p><strong>常見誤區修正</strong>：雖然純酒精密度（0.79 g/cm³）比水輕，但 40% 基酒含有 60% 水分且極易與水互溶。<strong>決定液體沉浮的第一變數其實是「糖度（Brix）」！</strong></p>
+        <table>
+          <thead>
+            <tr>
+              <th>杯中位置</th>
+              <th>液體類別</th>
+              <th>代表材料</th>
+              <th>密度原理</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><strong>最底層（最重）</strong></td>
+              <td>高糖利口酒 / 糖漿</td>
+              <td>藍柑橘利口酒、梅酒</td>
+              <td>糖分溶解大幅提高密度（1.05~1.15 g/cm³）</td>
+            </tr>
+            <tr>
+              <td><strong>中下層</strong></td>
+              <td>含糖碳酸飲料</td>
+              <td>雪碧 (Sprite)</td>
+              <td>含糖量高於無糖茶，且氣泡提供向上支撐</td>
+            </tr>
+            <tr>
+              <td><strong>中上層</strong></td>
+              <td>無糖茶飲 / 花水</td>
+              <td>無糖茉莉綠茶、蝶豆花水</td>
+              <td>零糖分，密度接近純水（1.00 g/cm³）</td>
+            </tr>
+            <tr>
+              <td><strong>最頂層（最輕）</strong></td>
+              <td>純蒸餾基酒</td>
+              <td>伏特加、琴酒</td>
+              <td>含 40% 酒精，需透過緩慢引流平鋪在最上方</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="slide-footer">
+        <span>Wiki 跨文件衝突修正重點：糖度效應大於酒精度</span>
+        <span>來源：wiki/layering-science.md</span>
+      </div>
+    </section>
+
+    <!-- Slide 6: 冰塊與引流技法 -->
+    <section class="slide">
+      <div>
+        <span class="tag">05 / 關鍵實作技法</span>
+        <h2>全滿杯冰塊原則 & 湯匙引流法</h2>
+        <div class="grid-2">
+          <div class="box">
+            <h3>🧊 為什麼冰塊一定要加滿整杯？</h3>
+            <ul>
+              <li><strong>減緩融水率</strong>：冰塊太少反而融得更快，會把整杯酒稀釋得淡而無味。</li>
+              <li><strong>物理緩衝墊</strong>：超商衛生冰塊杯加滿後，冰塊間的縫隙能托住上層液體，避免倒酒時直接衝破底層。</li>
+            </ul>
+          </div>
+          <div class="box">
+            <h3>🥄 居家湯匙背面引流法</h3>
+            <ul>
+              <li>倒入底層含糖液體後，先將冰塊加滿。</li>
+              <li>將乾淨長柄湯匙<strong>背面朝上</strong>，前端貼近杯壁、距離下層液面約 <strong>0.5 公分</strong>。</li>
+              <li>將上層液體極緩慢倒在湯匙背面，利用表面張力平鋪滑入。</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+      <div class="slide-footer">
+        <span>工具與手法決定漸層邊界是否清晰</span>
+        <span>來源：wiki/ice-and-tools.md</span>
+      </div>
+    </section>
+
+    <!-- Slide 7: 黃金公式實戰 -->
+    <section class="slide">
+      <div>
+        <span class="tag">06 / 新手實戰配方</span>
+        <h2>兩大零失敗黃金調酒公式</h2>
+        <div class="grid-2">
+          <div class="box">
+            <h3>公式 A：Highball 氣泡長飲 (1 : 3.5)</h3>
+            <ul>
+              <li><strong>基底</strong>：45ml 威士忌 或 琴酒</li>
+              <li><strong>副材料</strong>：150ml 無糖氣泡水 或 通寧水</li>
+              <li><strong>提味</strong>：1 角新鮮檸檬擠汁</li>
+              <li><strong>特色</strong>：酒精度約 8%～10%，清爽解膩、三分鐘完成。</li>
+            </ul>
+          </div>
+          <div class="box">
+            <h3>公式 B：三色分層漸層特調</h3>
+            <ul>
+              <li><strong>底層（最重）</strong>：藍柑橘利口酒 15ml ＋ 雪碧 80ml（攪勻後加滿冰塊）</li>
+              <li><strong>中層（次輕）</strong>：無糖茉莉綠茶 60ml（湯匙引流）</li>
+              <li><strong>頂層（最輕）</strong>：伏特加 30ml ＋ 少許蝶豆花水（湯匙引流浮頂，呈現藍、金、紫三色漸層）</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+      <div class="slide-footer">
+        <span>可直接套用至居家調酒實驗</span>
+        <span>來源：wiki/flavor-formula.md</span>
+      </div>
+    </section>
+
+    <!-- Slide 8: 總結與 LLM Wiki 說明 -->
+    <section class="slide">
+      <div>
+        <span class="tag">07 / 課程總結與知識庫架構</span>
+        <h2>新手避坑口訣 & 本簡報生成原理</h2>
+        <div class="box" style="margin-bottom: 1.2rem;">
+          <h3>🍹 居家調酒三句口訣</h3>
+          <p style="margin:0;"><strong>「糖重水輕酒浮頂，冰塊全滿不稀釋，湯匙貼壁慢慢淋。」</strong></p>
+        </div>
+        <div class="box">
+          <h3>🧠 關於這份簡報的 LLM Wiki 架構</h3>
+          <ul>
+            <li><strong>Raw 層</strong>：收集 5 篇獨立的酒類、物理與配方原始筆記（唯讀不改）。</li>
+            <li><strong>Wiki 層</strong>：AI 透過 Ingest 循環整理出 4 篇雙向連結概念頁，並在吸收第 3 篇時自動修正第 1 篇的密度誤區，最後執行 Lint 檢查。</li>
+            <li><strong>簡報層</strong>：嚴格依據 <code>wiki/</code> 編譯出本教學簡報，確保每個數據皆有出處。</li>
+          </ul>
+        </div>
+      </div>
+      <div class="slide-footer">
+        <span>感謝聆聽！祝調酒實驗順利</span>
+        <span>來源：wiki/index.md & wiki/log.md</span>
+      </div>
+    </section>
+  </div>
+
+  <div class="controls">
+    <button id="prevBtn" onclick="changeSlide(-1)">← 上一頁</button>
+    <span class="page-indicator" id="pageIndicator">1 / 8</span>
+    <button id="nextBtn" onclick="changeSlide(1)">下一頁 →</button>
+  </div>
+
+  <script>
+    let currentSlide = 0;
+    const slides = document.querySelectorAll('.slide');
+    const prevBtn = document.getElementById('prevBtn');
+    const nextBtn = document.getElementById('nextBtn');
+    const pageIndicator = document.getElementById('pageIndicator');
+    const progressFill = document.getElementById('progressFill');
+
+    function updateSlide() {
+      slides.forEach((slide, index) => {
+        slide.classList.toggle('active', index === currentSlide);
+      });
+      prevBtn.disabled = currentSlide === 0;
+      nextBtn.disabled = currentSlide === slides.length - 1;
+      pageIndicator.textContent = `${currentSlide + 1} / ${slides.length}`;
+      progressFill.style.width = `${((currentSlide + 1) / slides.length) * 100}%`;
+    }
+
+    function changeSlide(direction) {
+      const next = currentSlide + direction;
+      if (next >= 0 && next < slides.length) {
+        currentSlide = next;
+        updateSlide();
+      }
+    }
+
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'ArrowRight' || e.key === ' ') changeSlide(1);
+      if (e.key === 'ArrowLeft') changeSlide(-1);
+    });
+
+    updateSlide();
+  </script>
+</body>
+</html>
